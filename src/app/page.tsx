@@ -5,9 +5,15 @@ import { Pokemon, PokemonListResponse } from '@/types/pokemon';
 import { api } from '@/lib/api';
 import { PokemonCard } from '@/components/pokemon-card';
 import { PokemonDetails } from '@/components/pokemon-details';
+import { TypeFilter } from '@/components/type-filter';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+
+type PokemonType = 'normal' | 'fire' | 'water' | 'electric' | 'grass' | 'ice' |
+  'fighting' | 'poison' | 'ground' | 'flying' | 'psychic' |
+  'bug' | 'rock' | 'ghost' | 'dragon' | 'dark' | 'steel' | 'fairy';
 
 export default function Home() {
   const [pokemonList, setPokemonList] = useState<Pokemon[]>([]);
@@ -16,6 +22,7 @@ export default function Home() {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTypes, setSelectedTypes] = useState<PokemonType[]>([]);
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
@@ -51,9 +58,22 @@ export default function Home() {
     setDetailsOpen(true);
   };
 
-  const filteredPokemon = pokemonList.filter((pokemon) =>
-    pokemon.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleTypeSelect = (type: PokemonType) => {
+    setSelectedTypes((prev) =>
+      prev.includes(type)
+        ? prev.filter((t) => t !== type)
+        : [...prev, type]
+    );
+  };
+
+  const filteredPokemon = pokemonList.filter((pokemon) => {
+    const matchesSearch = pokemon.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesTypes = selectedTypes.length === 0 || 
+      selectedTypes.every((type) =>
+        pokemon.types.some((t) => t.type.name === type)
+      );
+    return matchesSearch && matchesTypes;
+  });
 
   if (error) {
     return (
@@ -92,6 +112,11 @@ export default function Home() {
         />
       </div>
 
+      <TypeFilter
+        selectedTypes={selectedTypes}
+        onTypeSelect={handleTypeSelect}
+      />
+
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {filteredPokemon.map((pokemon) => (
           <PokemonCard
@@ -108,7 +133,7 @@ export default function Home() {
         </div>
       )}
 
-      {hasMore && !loading && !searchQuery && (
+      {hasMore && !loading && !searchQuery && selectedTypes.length === 0 && (
         <div className="mt-8 text-center">
           <Button onClick={handleLoadMore}>Load More</Button>
         </div>
@@ -119,6 +144,8 @@ export default function Home() {
         open={detailsOpen}
         onOpenChange={setDetailsOpen}
       />
+
+      <ThemeToggle />
     </main>
   );
 }
