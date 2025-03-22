@@ -25,6 +25,13 @@ export default function Home() {
   const [selectedTypes, setSelectedTypes] = useState<PokemonType[]>([]);
   const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [favorites, setFavorites] = useState<number[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('favorites');
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
 
   const fetchPokemon = async () => {
     try {
@@ -49,6 +56,12 @@ export default function Home() {
     fetchPokemon();
   }, [offset]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('favorites', JSON.stringify(favorites));
+    }
+  }, [favorites]);
+
   const handleLoadMore = () => {
     setOffset((prev) => prev + 20);
   };
@@ -63,6 +76,14 @@ export default function Home() {
       prev.includes(type)
         ? prev.filter((t) => t !== type)
         : [...prev, type]
+    );
+  };
+
+  const toggleFavorite = (pokemon: Pokemon) => {
+    setFavorites((prev) =>
+      prev.includes(pokemon.id)
+        ? prev.filter((id) => id !== pokemon.id)
+        : [...prev, pokemon.id]
     );
   };
 
@@ -99,23 +120,27 @@ export default function Home() {
 
   return (
     <main className="container mx-auto px-4 py-8">
-      <h1 className="mb-8 text-center text-4xl font-bold">Pokédex</h1>
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="text-4xl font-bold tracking-tight">Pokédex</h1>
+        <ThemeToggle />
+      </div>
       
-      <div className="relative mb-8">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Search Pokemon..."
-          className="pl-9"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+      <div className="mb-8 grid gap-4 md:grid-cols-[2fr,1fr]">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search Pokemon..."
+            className="pl-9"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <TypeFilter
+          selectedTypes={selectedTypes}
+          onTypeSelect={handleTypeSelect}
         />
       </div>
-
-      <TypeFilter
-        selectedTypes={selectedTypes}
-        onTypeSelect={handleTypeSelect}
-      />
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {filteredPokemon.map((pokemon) => (
@@ -123,13 +148,15 @@ export default function Home() {
             key={pokemon.id}
             pokemon={pokemon}
             onViewDetails={handleViewDetails}
+            isFavorite={favorites.includes(pokemon.id)}
+            onToggleFavorite={toggleFavorite}
           />
         ))}
       </div>
 
       {loading && (
         <div className="mt-8 text-center">
-          <p>Loading...</p>
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]" />
         </div>
       )}
 
@@ -144,8 +171,6 @@ export default function Home() {
         open={detailsOpen}
         onOpenChange={setDetailsOpen}
       />
-
-      <ThemeToggle />
     </main>
   );
 }
