@@ -20,15 +20,11 @@ export function PokemonCard({
   console.log('Rendering PokemonCard:', pokemon.name)
 
   const handleCardClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onViewDetails(pokemon);
-  };
-
-  const handleFavoriteClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onToggleFavorite(pokemon.id);
+    // Only trigger if we didn't click the favorite button
+    if (!(e.target as HTMLElement).closest('.favorite-button')) {
+      console.log('Card clicked:', pokemon.name);
+      onViewDetails(pokemon);
+    }
   };
 
   return (
@@ -39,7 +35,10 @@ export function PokemonCard({
       {/* Favorite Button */}
       <div 
         className="favorite-button absolute left-1 top-1 z-10"
-        onClick={handleFavoriteClick}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleFavorite(pokemon.id);
+        }}
       >
         <div className="flex h-4 w-4 items-center justify-center bg-white/10">
           <Star 

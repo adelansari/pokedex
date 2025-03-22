@@ -16,15 +16,16 @@ type PokemonType = 'normal' | 'fire' | 'water' | 'electric' | 'grass' | 'ice' |
   'bug' | 'rock' | 'ghost' | 'dragon' | 'dark' | 'steel' | 'fairy';
 
 export default function Home() {
-  const [pokemonList, setPokemonList] = useState<Pokemon[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTypes, setSelectedTypes] = useState<PokemonType[]>([]);
-  const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [favorites, setFavorites] = useState<number[]>([]);
+  const [pokemon, setPokemon] = useState<Pokemon[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null)
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  const [favorites, setFavorites] = useState<number[]>([])
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([])
+  const [sortBy, setSortBy] = useState<"id" | "name">("id")
 
   const ITEMS_PER_PAGE = 12;
   const TOTAL_POKEMON = 151; // First generation only
@@ -49,7 +50,7 @@ export default function Home() {
   const fetchPokemon = async () => {
     try {
       setLoading(true);
-      const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+      const offset = (page - 1) * ITEMS_PER_PAGE;
       const response = await api.getPokemonList(offset, ITEMS_PER_PAGE);
       const pokemonDetails = await Promise.all(
         response.results.map((pokemon) =>
@@ -57,7 +58,7 @@ export default function Home() {
         )
       );
       // Simply set the new Pokémon list instead of accumulating
-      setPokemonList(pokemonDetails.sort((a, b) => a.id - b.id));
+      setPokemon(pokemonDetails.sort((a, b) => a.id - b.id));
     } catch (err) {
       setError('Failed to fetch Pokemon');
       console.error(err);
@@ -68,13 +69,26 @@ export default function Home() {
 
   useEffect(() => {
     fetchPokemon();
-  }, [currentPage]);
+  }, [page]);
 
   const handleViewDetails = (pokemon: Pokemon) => {
-    console.log('Opening details for:', pokemon.name);
-    setSelectedPokemon(pokemon);
-    setDetailsOpen(true);
-  };
+    console.log('Opening details for:', pokemon.name)
+    setSelectedPokemon(pokemon)
+    setDetailsOpen(true)
+  }
+
+  const handleCloseDetails = () => {
+    setDetailsOpen(false)
+    setSelectedPokemon(null)
+  }
+
+  const handleToggleFavorite = (id: number) => {
+    setFavorites((prev) =>
+      prev.includes(id)
+        ? prev.filter((favoriteId) => favoriteId !== id)
+        : [...prev, id]
+    )
+  }
 
   const handleTypeSelect = (type: PokemonType) => {
     setSelectedTypes((prev) =>
@@ -84,15 +98,7 @@ export default function Home() {
     );
   };
 
-  const toggleFavorite = (id: number) => {
-    setFavorites((prev) =>
-      prev.includes(id)
-        ? prev.filter((prevId) => prevId !== id)
-        : [...prev, id]
-    );
-  };
-
-  const filteredPokemon = pokemonList.filter((pokemon) => {
+  const filteredPokemon = pokemon.filter((pokemon) => {
     const matchesSearch = pokemon.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesTypes = selectedTypes.length === 0 || 
       selectedTypes.every((type) =>
@@ -113,8 +119,8 @@ export default function Home() {
             className="mt-4"
             onClick={() => {
               setError(null);
-              setCurrentPage(1);
-              setPokemonList([]);
+              setPage(1);
+              setPokemon([]);
               fetchPokemon();
             }}
           >
@@ -171,7 +177,7 @@ export default function Home() {
                 pokemon={pokemon}
                 onViewDetails={handleViewDetails}
                 isFavorite={favorites.includes(pokemon.id)}
-                onToggleFavorite={toggleFavorite}
+                onToggleFavorite={handleToggleFavorite}
               />
             ))}
           </div>
@@ -183,8 +189,8 @@ export default function Home() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-              disabled={currentPage === 1 || loading}
+              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              disabled={page === 1 || loading}
               className="h-8 rounded-none bg-white px-3 text-sm font-bold text-black hover:bg-gray-100"
             >
               ←
@@ -194,11 +200,11 @@ export default function Home() {
                 type="number"
                 min={1}
                 max={totalPages}
-                value={currentPage}
+                value={page}
                 onChange={(e) => {
                   const page = parseInt(e.target.value);
                   if (!isNaN(page) && page >= 1 && page <= totalPages) {
-                    setCurrentPage(page);
+                    setPage(page);
                   }
                 }}
                 className="w-12 border-0 bg-white px-2 py-1 text-center text-sm text-black"
@@ -208,8 +214,8 @@ export default function Home() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages || loading}
+              onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={page === totalPages || loading}
               className="h-8 rounded-none bg-white px-3 text-sm font-bold text-black hover:bg-gray-100"
             >
               →
@@ -230,13 +236,13 @@ export default function Home() {
       </div>
 
       {/* Pokemon Details Modal */}
-      {detailsOpen && selectedPokemon && (
+      {selectedPokemon && (
         <PokemonDetails
           pokemon={selectedPokemon}
           open={detailsOpen}
-          onOpenChange={setDetailsOpen}
-          onFavoriteToggle={toggleFavorite}
+          onClose={handleCloseDetails}
           isFavorite={favorites.includes(selectedPokemon.id)}
+          onToggleFavorite={handleToggleFavorite}
         />
       )}
     </main>
