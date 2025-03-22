@@ -10,6 +10,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import Image from 'next/image';
 
 type PokemonType = 'normal' | 'fire' | 'water' | 'electric' | 'grass' | 'ice' |
   'fighting' | 'poison' | 'ground' | 'flying' | 'psychic' |
@@ -136,9 +137,14 @@ export default function Home() {
       <div className="mx-auto flex h-full max-w-[800px] flex-col">
         {/* Header */}
         <div className="flex-none p-4">
-          <h1 className="py-2 text-center text-4xl font-bold text-white">
-            POKÉDEX
-          </h1>
+          <Image
+            src="/pokedex-logo.png"
+            alt="Pokédex"
+            width={500}
+            height={80}
+            className="h-20 max-h-[20vh] w-auto"
+            priority
+          />
 
           {/* Search Bar */}
           <div className="flex">
