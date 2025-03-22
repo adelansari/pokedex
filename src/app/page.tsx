@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react';
 import { Pokemon, PokemonListResponse } from '@/types/pokemon';
 import { api } from '@/lib/api';
 import { PokemonCard } from '@/components/pokemon-card';
+import { PokemonDetails } from '@/components/pokemon-details';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 
 export default function Home() {
   const [pokemonList, setPokemonList] = useState<Pokemon[]>([]);
@@ -12,6 +15,9 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPokemon, setSelectedPokemon] = useState<Pokemon | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const fetchPokemon = async () => {
     try {
@@ -41,9 +47,13 @@ export default function Home() {
   };
 
   const handleViewDetails = (pokemon: Pokemon) => {
-    // TODO: Implement Pokemon details view
-    console.log('View details for:', pokemon.name);
+    setSelectedPokemon(pokemon);
+    setDetailsOpen(true);
   };
+
+  const filteredPokemon = pokemonList.filter((pokemon) =>
+    pokemon.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (error) {
     return (
@@ -70,8 +80,20 @@ export default function Home() {
   return (
     <main className="container mx-auto px-4 py-8">
       <h1 className="mb-8 text-center text-4xl font-bold">Pokédex</h1>
+      
+      <div className="relative mb-8">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          type="search"
+          placeholder="Search Pokemon..."
+          className="pl-9"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+      </div>
+
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {pokemonList.map((pokemon) => (
+        {filteredPokemon.map((pokemon) => (
           <PokemonCard
             key={pokemon.id}
             pokemon={pokemon}
@@ -79,16 +101,24 @@ export default function Home() {
           />
         ))}
       </div>
+
       {loading && (
         <div className="mt-8 text-center">
           <p>Loading...</p>
         </div>
       )}
-      {hasMore && !loading && (
+
+      {hasMore && !loading && !searchQuery && (
         <div className="mt-8 text-center">
           <Button onClick={handleLoadMore}>Load More</Button>
         </div>
       )}
+
+      <PokemonDetails
+        pokemon={selectedPokemon}
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+      />
     </main>
   );
 }
