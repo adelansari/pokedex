@@ -1,77 +1,71 @@
 "use client"
 
-import Image from 'next/image';
-import { Pokemon } from '@/types/pokemon';
-import { Button } from './ui/button';
-import { Card, CardContent, CardFooter, CardHeader } from './ui/card';
-import { Badge } from './ui/badge';
-import { Heart } from 'lucide-react';
+import { Pokemon } from "@/types/pokemon"
+import { Star } from "lucide-react"
+import Image from "next/image"
 
 interface PokemonCardProps {
-  pokemon: Pokemon;
-  onViewDetails: (pokemon: Pokemon) => void;
-  isFavorite?: boolean;
-  onToggleFavorite?: (pokemon: Pokemon) => void;
+  pokemon: Pokemon
+  onViewDetails: (pokemon: Pokemon) => void
+  isFavorite: boolean
+  onToggleFavorite: (id: number) => void
 }
 
-export function PokemonCard({ pokemon, onViewDetails, isFavorite = false, onToggleFavorite }: PokemonCardProps) {
+export function PokemonCard({
+  pokemon,
+  onViewDetails,
+  isFavorite,
+  onToggleFavorite,
+}: PokemonCardProps) {
+  console.log('Rendering PokemonCard:', pokemon.name)
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onViewDetails(pokemon);
+  };
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onToggleFavorite(pokemon.id);
+  };
+
   return (
-    <Card className="overflow-hidden border-2 border-primary/20 bg-card transition-all hover:border-primary/40 hover:shadow-lg">
-      <CardHeader className="p-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold capitalize tracking-wider">{pokemon.name}</h3>
-          <div className="flex items-center gap-2">
-            {onToggleFavorite && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => onToggleFavorite(pokemon)}
-              >
-                <Heart
-                  className={`h-5 w-5 ${
-                    isFavorite ? 'fill-red-500 text-red-500' : 'text-muted-foreground'
-                  }`}
-                />
-                <span className="sr-only">
-                  {isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                </span>
-              </Button>
-            )}
-            <span className="text-sm font-mono text-muted-foreground">#{String(pokemon.id).padStart(3, '0')}</span>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="p-4">
-        <div className="relative mx-auto h-32 w-32">
-          <Image
-            src={pokemon.sprites.front_default}
-            alt={pokemon.name}
-            fill
-            className="object-contain"
-            priority
+    <div
+      onClick={handleCardClick}
+      className="group relative flex aspect-[4/3] cursor-pointer flex-col bg-[#1f1f1f] hover:bg-[#2a2a2a]"
+    >
+      {/* Favorite Button */}
+      <div 
+        className="favorite-button absolute left-1 top-1 z-10"
+        onClick={handleFavoriteClick}
+      >
+        <div className="flex h-4 w-4 items-center justify-center bg-white/10">
+          <Star 
+            className={`h-3 w-3 ${isFavorite ? "fill-[#98fb98]" : ""} text-[#98fb98]`}
           />
         </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          {pokemon.types.map((type) => (
-            <Badge
-              key={type.type.name}
-              variant="secondary"
-              className="font-mono text-xs"
-            >
-              {type.type.name}
-            </Badge>
-          ))}
-        </div>
-      </CardContent>
-      <CardFooter className="p-4">
-        <Button
-          className="w-full font-mono"
-          onClick={() => onViewDetails(pokemon)}
-        >
-          View Details
-        </Button>
-      </CardFooter>
-    </Card>
-  );
+      </div>
+
+      {/* Pokemon Image */}
+      <div className="relative flex-1">
+        <Image
+          src={pokemon.sprites.other["official-artwork"].front_default}
+          alt={pokemon.name}
+          fill
+          className="object-contain p-2"
+          sizes="(max-width: 768px) 50vw, 33vw"
+          priority
+        />
+      </div>
+
+      {/* Pokemon Name */}
+      <div className="bg-[#2f2f2f] p-1 text-center">
+        <h3 className="font-mono text-sm font-bold text-[#98fb98]">
+          {pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)}
+        </h3>
+      </div>
+    </div>
+  )
 } 
